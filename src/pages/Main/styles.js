@@ -6,6 +6,12 @@ export const Form = styled.form`
   flex-direction: row;
 `;
 
+export const Error = styled.p`
+  margin-top: 5px;
+  font-size: 12px;
+  color: red;
+`;
+
 export const Input = styled.input`
   flex: 1;
   border: 1px solid ${props => (props.error ? 'red' : '#eee')};

@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import { FaGithubAlt, FaPlus, FaSpinner } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { Form, SubmitButton, List, Input } from './styles';
+import { empty } from 'rxjs';
+import { Form, SubmitButton, List, Input, Error } from './styles';
 
 import Container from '../../components/Container';
 import api from '../../services/api';
@@ -12,6 +13,7 @@ export default class Main extends Component {
     repositories: [],
     loading: false,
     error: false,
+    errorMsg: '',
   };
 
   componentDidMount() {
@@ -43,12 +45,15 @@ export default class Main extends Component {
 
     try {
       // verifica se ja EXISTE REPOSITORIO
+      if (newRepo === '') throw new Error('Informe um repospitório');
+
       const achou = repositories.find(
         repos => repos.name.toLowerCase() === newRepo.toLowerCase()
       );
 
       if (achou) throw new Error('Repositório duplicado');
 
+      // busca o repositorio no github
       const response = await api.get(`/repos/${newRepo}`);
 
       const data = {
@@ -59,8 +64,8 @@ export default class Main extends Component {
         repositories: [...repositories, data],
         newRepo: '',
       });
-    } catch (error) {
-      this.setState({ error: true });
+    } catch (err) {
+      this.setState({ error: true, errorMsg: err.message });
     }
 
     this.setState({ loading: false });
@@ -68,7 +73,7 @@ export default class Main extends Component {
 
   render() {
     const {
-      state: { newRepo, loading, repositories, error },
+      state: { newRepo, loading, repositories, error, errorMsg },
       handleInputChange,
       handleSubmit,
     } = this;
@@ -98,6 +103,8 @@ export default class Main extends Component {
             )}
           </SubmitButton>
         </Form>
+
+        {error && <Error>{errorMsg}</Error>}
 
         <List>
           {repositories.map(repository => (

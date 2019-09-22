@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import Container from '../../components/Container';
 import api from '../../services/api';
 
-import { Loading, Owner, IssueList } from './styles';
+import { Loading, Owner, IssueList, Filters, Paginacao } from './styles';
 
 export default class Repository extends Component {
   static propTypes = {
@@ -20,18 +20,31 @@ export default class Repository extends Component {
     repository: {},
     issues: [],
     loading: true,
+    state: 'open',
+    per_page: 5,
+    page: 1,
   };
 
-  async componentDidMount() {
+  componentDidMount() {
+    this.getData();
+  }
+
+  componentDidUpdate() {
+    this.getData();
+  }
+
+  getData = async () => {
     const { match } = this.props;
     const repoName = decodeURIComponent(match.params.repository);
+    const { state, per_page, page } = this.state;
 
     const [repository, issues] = await Promise.all([
       api.get(`/repos/${repoName}`),
       api.get(`/repos/${repoName}/issues`, {
         params: {
-          state: 'open',
-          per_page: 5,
+          state,
+          per_page,
+          page,
         },
       }),
     ]);
@@ -41,10 +54,18 @@ export default class Repository extends Component {
       issues: issues.data,
       loading: false,
     });
-  }
+  };
+
+  handleSelectChange = ({ target: { name, value } }) => {
+    this.setState({ [name]: value });
+  };
+
+  mudaPagina = (n = 1) => {
+    this.setState({ page: n });
+  };
 
   render() {
-    const { repository, issues, loading } = this.state;
+    const { repository, issues, loading, page } = this.state;
 
     if (loading) {
       return <Loading>Carregando</Loading>;
@@ -58,6 +79,38 @@ export default class Repository extends Component {
           <h1>{repository.name}</h1>
           <p>{repository.description}</p>
         </Owner>
+
+        <Filters>
+          <div>
+            <label htmlFor="filtro">
+              State
+              <select
+                name="state"
+                id="state"
+                onChange={this.handleSelectChange}
+              >
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+                <option value="all">All</option>
+              </select>
+            </label>
+          </div>
+
+          <div>
+            <label htmlFor="per_page">
+              Per Page
+              <select
+                name="per_page"
+                id="per_page"
+                onChange={this.handleSelectChange}
+              >
+                <option value="5">5</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+              </select>
+            </label>
+          </div>
+        </Filters>
 
         <IssueList>
           {issues.map(issue => (
@@ -75,6 +128,12 @@ export default class Repository extends Component {
             </li>
           ))}
         </IssueList>
+
+        <Paginacao>
+          <button onClick={() => this.mudaPagina()}>1</button>
+          <span>{this.state.page}</span>
+          <button onClick={() => this.mudaPagina(page + 1)}>Proxima</button>
+        </Paginacao>
       </Container>
     );
   }
